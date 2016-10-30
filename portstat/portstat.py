@@ -4,6 +4,7 @@
 import os
 import time
 import argparse
+import requests
 
 try:
     from urllib.parse import urlencode
@@ -70,12 +71,17 @@ def sync(portGroups):
     os.system('/bin/bash /etc/portstat.rules')
 
 
+def flushDrop():
+    os.system('/sbin/iptables -F DROP_PORTS')
+
+
 def upload(portGroups):
     # stats = {9999: 11111}, {10000: 11112}
     stats = {}
     for each in os.popen('/sbin/iptables -vxn -L PORTSTAT').readlines()[2:]:
-        port = int(each.strip().split()[9][4:])
-        value = int(each.strip().split()[1])
+        cols = each.strip().split()
+        port = int(cols[9][4:])
+        value = int(cols[1])
         if port in stats:
             stats[port] += value
         else:
@@ -99,10 +105,12 @@ def upload(portGroups):
             line[int(each[1])] = stats[int(each[1])]
         datas.append({each[2]: line})
     for each in datas:
-        req = urllib2.Request(
-            '%s?%s' % (each.keys()[0], str(int(time.time()))),
-            urlencode(each.values()[0]).encode('utf-8'))
-        urllib2.urlopen(req)
+        ret = requests.post('%s&time=%s' % (each.keys()[0], str(int(time.time()))),
+                      json={
+                          'portstat': each.values()[0]
+                      }).json()
+        for port in ret['drop_ports']:
+            os.system('/sbin/iptables -A DROP_PORTS -p tcp --dport %s -j DROP' % port)
     os.system('/sbin/iptables -Z PORTSTAT')
 
 
@@ -121,6 +129,9 @@ def main():
     group.add_argument(
         '-u', '--upload',
         help='Upload the port stat with webhook.', action='store_true')
+    group.add_argument(
+        '-f', '--flush-drop',
+        help='Flush ports dropped in DROP group.', action='store_true')
     args = parser.parse_args()
     portGroups = getConfig(args.config)
     if args.version:
@@ -129,6 +140,8 @@ def main():
         sync(portGroups)
     if args.upload:
         upload(portGroups)
+    if args.flush_drop:
+        flushDrop()
 
 
 if __name__ == '__main__':
