@@ -109,6 +109,7 @@ def upload(portGroups):
                       json={
                           'portstat': each.values()[0]
                       }).json()
+        flushDrop()
         for port in ret['drop_ports']:
             os.system('/sbin/iptables -A DROP_PORTS -p tcp --dport %s -j DROP' % port)
     os.system('/sbin/iptables -Z PORTSTAT')
