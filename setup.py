@@ -9,7 +9,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='portstat',
-    version='0.0.7.5',
+    version='0.0.8',
     keywords=('port', 'monitor', 'traffic'),
     url='https://github.com/imlonghao/portstat',
     license='Apache License 2.0',
