@@ -22,7 +22,7 @@ except ImportError:
     import ConfigParser as configparser
 
 __author__ = 'imlonghao, rallets'
-__version__ = '0.0.9'
+__version__ = '0.1.0'
 
 
 def version():
@@ -94,15 +94,15 @@ def upload(portGroups):
             begin = int(each[1].split('-')[0])
             end = int(each[1].split('-')[1]) + 1
             for i in range(begin, end):
-                line[i] = stats[i]
+                line[i] = stats.get(i, 0)
         elif ',' in each[1]:
             portLists = each[1].split(',')
             while '' in portLists:
                 portLists.remove('')
             for i in portLists:
-                line[int(i)] = stats[int(i)]
+                line[int(i)] = stats.get(int(i), 0)
         else:
-            line[int(each[1])] = stats[int(each[1])]
+            line[int(each[1])] = stats.get(int(each[1]), 0)
         datas.append({each[2]: line})
     for each in datas:
         ret = requests.post('%s&time=%s' % (each.keys()[0], str(int(time.time()))),
